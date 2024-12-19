@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+
+{% set current_site = "genes" %}
+{% include "header.html" %}
+
+<body>
+
+    {% include "navbar.html" %}
+
+    <main role="main" class="container">
+
+        <div>
+            <h1>Genes</h1>
+            <table class="table">
+
+                <tr class="table-secondary">
+                    <th>ID</th>
+                    <th>Gene Name</th>
+                    <th>Source Database</th>
+                </tr>
+                
+                {% for row in genes %}
+                    <tr style="background-color: {% if (loop.index0 > 0 and loop.previtem[0] != row[0]) or loop.index0 == 0 %}#f0f8ff{% endif %};">
+                        <td>{{ row[0] }}</td>
+                        <td>{{ row[1] }}</td>
+                        <td>{{ row[2] }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </main>
+
+    {% include "footer.html" %}
+
+</body>
+
+</html>

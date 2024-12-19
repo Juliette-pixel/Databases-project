@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+
+{% set current_site = "drugs" %}
+{% include "header.html" %}
+
+<body>
+
+    {% include "navbar.html" %}
+
+    <main role="main" class="container">
+
+        <div>
+            <h1>Drugs</h1>
+            <table class="table">
+
+                <tr class="table-secondary">
+                    <th>ID</th>
+                    <th>Drug Name</th>
+                    <th>Source Database</th>
+                    <th>Approved</th>
+                    <th>Immunotherapy</th>
+                </tr>
+
+                {% for row in drugs %}
+                <tr
+                    style="background-color: {% if (loop.index0 > 0 and loop.previtem[0] != row[0]) or loop.index0 == 0 %}#f0f8ff{% endif %};">
+                    <td>{{ row[0] }}</td>
+                    <td>{{ row[1] }}</td>
+                    <td>{{ row[2] }}</td>
+                    {% if loop.index0 == 0 or (loop.previtem[0] != row[0]) %}
+                    <td>{{ row[3] }}</td>
+                    <td>{{ row[4] }}</td>
+                    {% else %}
+                    <td></td>
+                    <td></td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+
+            </table>
+        </div>
+    </main>
+
+    {% include "footer.html" %}
+
+</body>
+
+</html>

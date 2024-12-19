@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+
+{% set current_site = "interactions" %}
+{% include "header.html" %}
+
+<body>
+
+    {% include "navbar.html" %}
+
+    <main role="main" class="container">
+
+        <div>
+            <h1>Interaction Explorer</h1>
+
+            <p>
+                Search for interactions between drugs and genes. You can supply either a drug or a gene or both.
+            </p>
+
+            <form method="POST" action="/">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="drug">Select Drug</label>
+                        <select id="drug" class="form-control select2" name="drug">
+                            <option value="">-- Select a Drug --</option>
+                            {% for drug in drugs %}
+                            <option value="{{ drug[0] }}" {% if selected_drug==drug[0] %}selected{% endif %}>
+                                {% if selected_drug==drug[0] %}
+                                {{ drug[0] }}
+                                {% else %}
+                                {{ drug[1] }} ({{ drug[0] }})
+                                {% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="gene">Select Gene</label>
+                        <select id="gene" class="form-control select2" name="gene">
+                            <option value="">-- Select a Gene --</option>
+                            {% for gene in genes %}
+                            <option value="{{ gene[0] }}" {% if selected_gene==gene[0] %}selected{% endif %}>
+                                {{ gene[1] }} ({{ gene[0] }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </div>
+            </form>
+
+            {% if form_submitted %}
+                {% if interactions %}
+                    <div class="mt-5">
+                        <h2>Interactions</h2>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Drug</th>
+                                    <th>Gene</th>
+                                    <th>Interaction Type</th>
+                                    <th>Interaction Score</th>
+                                    <th>Source Database</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for interaction in interactions %}
+                                <tr>
+                                    <td>{{ interaction[2] }} ({{ interaction[3] }})</td>
+                                    <td>{{ interaction[0] }} ({{ interaction[1] }})</td>
+                                    <td class="{% if interaction[4].lower() == 'inhibitor' %}table-danger{% elif interaction[4].lower() == 'agonist' %}table-success{% endif %}">{{ interaction[4] }}</td>
+                                    <td>{{ interaction[5] }}</td>
+                                    <td>{{ interaction[6] }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-5">
+                        <h2>Interaction Types Breakdown</h2>
+                        <div id="interaction-piechart" style="width: 900px; height: 500px;"></div>
+                    </div>
+
+                    <!-- Google Charts Script -->
+                    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+                    <script type="text/javascript">
+                        google.charts.load('current', {'packages':['corechart']});
+                        google.charts.setOnLoadCallback(drawChart);
+
+                        function drawChart() {
+                            var data = google.visualization.arrayToDataTable([
+                                ['Interaction Type', 'Count'],
+                                {% for item in interaction_chart_data %}
+                                ['{{ item.label }}', {{ item.value }}],
+                                {% endfor %}
+                            ]);
+
+                            var options = {
+                                title: 'Interaction Types Breakdown'
+                            };
+
+                            var chart = new google.visualization.PieChart(document.getElementById('interaction-piechart'));
+                            chart.draw(data, options);
+                        }
+                    </script>
+
+                {% else %}
+                <div class="mt-5">
+                    <h2>No Interactions Found</h2>
+                    <p>
+                        No interactions found between {{ selected_gene }} and {{ selected_drug }} in the local database.
+                        <br><br>
+                
+                        Here is what ChatGPT says what potential interactions could be:
+                    </p>
+                    {% if openai_response %}
+                        <div class="mt-5">
+                            <h2>OpenAI Suggestions</h2>
+                            <div style="
+                                background-color: #f8f9fa; 
+                                padding: 15px; 
+                                border: 1px solid #ddd; 
+                                border-radius: 5px;
+                                font-family: 'Arial', sans-serif; 
+                                white-space: pre-wrap; /* Preserve formatting like line breaks */
+                                font-size: 14px; 
+                                line-height: 1.6;">
+                                {{ openai_response }}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </main>
+
+    {% include "footer.html" %}
+
+    <script>
+        $('.select2').select2();
+    </script>
+
+</body>
+
+</html>
