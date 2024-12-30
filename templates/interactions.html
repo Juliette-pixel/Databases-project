@@ -54,6 +54,11 @@
 
             {% if form_submitted %}
                 {% if interactions %}
+
+                    <div class="mt-5">
+                        <h2>Interaction Types Breakdown</h2>
+                        <div id="interaction-piechart" style="width: 900px; height: 500px;"></div>
+                    </div>
                     <div class="mt-5">
                         <h2>Interactions</h2>
                         <table class="table table-striped">
@@ -78,11 +83,6 @@
                                 {% endfor %}
                             </tbody>
                         </table>
-                    </div>
-
-                    <div class="mt-5">
-                        <h2>Interaction Types Breakdown</h2>
-                        <div id="interaction-piechart" style="width: 900px; height: 500px;"></div>
                     </div>
 
                     <!-- Google Charts Script -->
