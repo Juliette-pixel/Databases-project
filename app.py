@@ -132,6 +132,176 @@ def drugs():
 
     return render_template('drugs.html', drugs=rows)
 
+#API
+@app.route("/api/drugs", methods=["GET"])
+def api_get_drugs():
+    """
+    REST API endpoint to fetch drug data.
+    Query parameters:
+        - id: Optional. Filter by specific drug concept ID.
+        - limit: Number of records to return (default: 50).
+        - offset: Number of records to skip (default: 0).
+    Returns:
+        JSON response with drug data.
+    """
+    drug_id = request.args.get("id", default=None, type=str)
+    limit = request.args.get("limit", default=50, type=int)
+    offset = request.args.get("offset", default=0, type=int)
+
+    query = '''
+        SELECT d.concept_id, da.drug_claim_name, da.source_db_name, d.approved, d.immunotherapy, d.anti_neoplastic
+        FROM Drugs d
+        INNER JOIN Drugs_Alias da ON d.concept_id = da.concept_id
+        {filter_clause}
+        GROUP BY d.concept_id, da.drug_claim_name, da.source_db_name, d.approved, d.immunotherapy, d.anti_neoplastic
+        ORDER BY d.concept_id, da.drug_claim_name
+        LIMIT %s OFFSET %s
+    '''
+
+    filter_clause = ""
+    params = []
+
+    if drug_id:
+        filter_clause = "WHERE d.concept_id = %s"
+        params.append(drug_id)
+
+    params.extend([limit, offset])
+
+    cursor.execute(query.format(filter_clause=filter_clause), params)
+
+    rows = cursor.fetchall()
+    drugs = [
+        {
+            "concept_id": row[0],
+            "drug_claim_name": row[1],
+            "source_db_name": row[2],
+            "approved": row[3],
+            "immunotherapy": row[4],
+            "anti_neoplastic": row[5]
+        }
+        for row in rows
+    ]
+
+    return {
+        "status": "success",
+        "data": drugs,
+        "limit": limit,
+        "offset": offset
+    }, 200
+
+@app.route("/api/genes", methods=["GET"])
+def api_get_genes():
+    """
+    REST API endpoint to fetch gene data.
+    Query parameters:
+        - id: Optional. Filter by specific gene concept ID.
+        - limit: Number of records to return (default: 50).
+        - offset: Number of records to skip (default: 0).
+    Returns:
+        JSON response with gene data.
+    """
+    gene_id = request.args.get("id", default=None, type=str)
+    limit = request.args.get("limit", default=50, type=int)
+    offset = request.args.get("offset", default=0, type=int)
+
+    query = '''
+        SELECT g.concept_id, ga.gene_claim_name, ga.source_db_name
+        FROM Genes g
+        INNER JOIN Genes_Alias ga ON g.concept_id = ga.concept_id
+        {filter_clause}
+        GROUP BY g.concept_id, ga.gene_claim_name, ga.source_db_name
+        ORDER BY g.concept_id, ga.gene_claim_name
+        LIMIT %s OFFSET %s
+    '''
+
+    filter_clause = ""
+    params = []
+
+    if gene_id:
+        filter_clause = "WHERE g.concept_id = %s"
+        params.append(gene_id)
+
+    params.extend([limit, offset])
+
+    cursor.execute(query.format(filter_clause=filter_clause), params)
+
+    rows = cursor.fetchall()
+    genes = [
+        {
+            "concept_id": row[0],
+            "gene_claim_name": row[1],
+            "source_db_name": row[2]
+        }
+        for row in rows
+    ]
+
+    return {
+        "status": "success",
+        "data": genes,
+        "limit": limit,
+        "offset": offset
+    }, 200
+
+@app.route("/api/interactions", methods=["GET"])
+def api_get_interactions():
+    """
+    REST API endpoint to fetch interaction data.
+    Query parameters:
+        - drug_id: Optional. Filter by specific drug concept ID.
+        - gene_id: Optional. Filter by specific gene concept ID.
+    Returns:
+        JSON response with interaction data.
+    """
+    drug_id = request.args.get("drug_id", default=None, type=str)
+    gene_id = request.args.get("gene_id", default=None, type=str)
+
+    query = '''
+        SELECT 
+            MIN(ga.gene_claim_name) AS gene_claim_name, 
+            i.gene_concept_id, 
+            MIN(da.drug_claim_name) AS drug_claim_name, 
+            i.drug_concept_id, 
+            i.interaction_type, 
+            i.interaction_score, 
+            i.interaction_source_db_name
+        FROM Interactions i
+        LEFT JOIN Genes_Alias ga ON i.gene_concept_id = ga.concept_id
+        LEFT JOIN Drugs_Alias da ON i.drug_concept_id = da.concept_id
+        WHERE 
+            i.interaction_type IS NOT NULL 
+            AND (%s IS NULL OR i.drug_concept_id = %s)
+            AND (%s IS NULL OR i.gene_concept_id = %s)
+        GROUP BY 
+            i.gene_concept_id, 
+            i.drug_concept_id, 
+            i.interaction_type, 
+            i.interaction_score, 
+            i.interaction_source_db_name
+    '''
+
+    params = [drug_id, drug_id, gene_id, gene_id]
+
+    cursor.execute(query, params)
+
+    rows = cursor.fetchall()
+    interactions = [
+        {
+            "gene_claim_name": row[0],
+            "gene_concept_id": row[1],
+            "drug_claim_name": row[2],
+            "drug_concept_id": row[3],
+            "interaction_type": row[4],
+            "interaction_score": row[5],
+            "interaction_source_db_name": row[6]
+        }
+        for row in rows
+    ]
+
+    return {
+        "status": "success",
+        "data": interactions
+    }, 200
+
 
 def connect_to_db():
     return mysql.connector.connect(
